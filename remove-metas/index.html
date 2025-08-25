@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Remover Metadados dos Vídeos</title>
+</head>
+<body>
+  <h2>Upload de Vídeos para Remoção de Metadados</h2>
+  <input type="file" id="videoInput" accept="video/*" multiple />
+  <button id="processBtn">Remover Metadados</button>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createFFmpeg, fetchFile } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.mjs';
+
+    const ffmpeg = createFFmpeg({ log: true });
+    const input = document.getElementById('videoInput');
+    const processBtn = document.getElementById('processBtn');
+    const log = document.getElementById('log');
+
+    function appendLog(msg) {
+      const p = document.createElement("p");
+      p.textContent = msg;
+      log.appendChild(p);
+    }
+
+    processBtn.addEventListener('click', async () => {
+      const files = input.files;
+      if (!files.length) {
+        alert('Envie ao menos um vídeo.');
+        return;
+      }
+
+      appendLog("Carregando FFmpeg...");
+      await ffmpeg.load();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const inputName = `input${i}.mp4`;
+        const outputName = `output${i}.mp4`;
+
+        appendLog(`Processando: ${file.name}`);
+
+        ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+
+        // Remove metadados usando o parâmetro "-map_metadata -1"
+        await ffmpeg.run('-i', inputName, '-map_metadata', '-1', '-c', 'copy', outputName);
+
+        const data = ffmpeg.FS('readFile', outputName);
+        const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+        const url = URL.createObjectURL(videoBlob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sem_metadados_${file.name}`;
+        a.textContent = `Baixar: sem_metadados_${file.name}`;
+        a.style.display = 'block';
+        document.body.appendChild(a);
+
+        appendLog(`Finalizado: ${file.name}`);
+      }
+
+      appendLog("Todos os vídeos foram processados.");
+    });
+  </script>
+</body>
+</html>

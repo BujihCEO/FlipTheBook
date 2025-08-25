@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Extrair Frames do Vídeo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+</head>
+<body>
+  <h2>Upload de Vídeo e Extração de Frames</h2>
+  <input type="file" id="videoInput" accept="video/*" />
+  <p id="status"></p>
+
+  <script>
+    const input = document.getElementById('videoInput');
+    const status = document.getElementById('status');
+
+    input.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      status.textContent = 'Carregando vídeo...';
+
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.playsInline = true;
+
+      await new Promise(resolve => {
+        video.addEventListener('loadedmetadata', resolve);
+      });
+
+      const duration = video.duration;
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      const zip = new JSZip();
+      const folder = zip.folder('frames');
+      const frameInterval = 0.1; // segundos
+      let currentTime = 0;
+      let frameCount = 0;
+
+      status.textContent = 'Extraindo frames...';
+
+      const captureFrame = (time) => {
+        return new Promise(resolve => {
+          video.currentTime = time;
+          video.addEventListener('seeked', function handler() {
+            video.removeEventListener('seeked', handler);
+            ctx.drawImage(video, 0, 0, width, height);
+            canvas.toBlob(blob => {
+              folder.file(`frame_${frameCount.toString().padStart(5, '0')}.png`, blob);
+              frameCount++;
+              resolve();
+            }, 'image/png');
+          });
+        });
+      };
+
+      while (currentTime < duration) {
+        await captureFrame(currentTime);
+        currentTime += frameInterval;
+      }
+
+      status.textContent = 'Compactando ZIP...';
+
+      const content = await zip.generateAsync({ type: 'blob' });
+
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = 'frames.zip';
+      a.click();
+
+      status.textContent = 'Download iniciado!';
+    });
+  </script>
+</body>
+</html>

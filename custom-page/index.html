@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="cropper.css">
+    <script src="cropper.min.js"></script>
+    <title>Document</title>
+</head>
+<style> 
+
+:root {
+    font-family: sans-serif;
+}
+
+</style>
+<body>
+    <div class="main"> 
+
+        <div class="book-container">
+            <div class="book">
+                <div class="video-page"></div>
+                <div class="advise">Parte não visível</div>
+                <div class="front"></div>
+                <div class="side">SEU TEXTO</div>
+                <div class="back"></div>
+                <div class="pages"></div>
+                <div class="shadow"></div>
+            </div>
+            <div class="book-settings">
+                <button class="play-pause-btn hidden"></button>
+                <div class="slider-wrap">
+                    <input class="slider-book" type="range" min="-45" max="225" value="45">
+                </div>
+            </div>
+        </div>
+
+
+        <div>
+            <h1>Texto</h1>
+            <input type="text" class="text-input" id="text" placeholder="Digite o texto aqui...">
+        </div>
+        
+        <div>
+            <h1>Foto</h1>
+            <label for="input-image" class="label-input img">Escolher imagem</label>
+            <div class="editor-wrap img hidden">
+                <label for="input-image" class="sub-img-btn sub-icon">Subtituir</label>
+                <button class="edit-img-btn edit-icon">Editar</button>
+                <button class="remove-img-btn remove-icon">Remover</button>
+            </div>
+            <input id="input-image" class="input-image " type="file" accept="image/png, image/jpeg">
+            <input class="front-cover-input " type="file" accept="image/png, image/jpeg">
+        </div>
+        
+        <div>
+            <h1>Vídeo *</h1>
+            <label for="input-video" class="label-input video">Escolher vídeo</label>
+            <div class="editor-wrap video hidden">
+                <label for="input-video" class="sub-video-btn sub-icon">Subtituir</label>
+                <button class="edit-video-btn edit-icon">Editar</button>
+                <button class="remove-video-btn remove-icon">Remover</button>
+            </div>
+            <input id="input-video" class="input-video" type="file" accept="video/*">
+            <input class="video-input" type="file" accept="video/*">
+        </div>
+
+    </div>
+
+    <div class="popup-cropper hidden">
+        <div>
+            <img class="crop-image">
+            <div class="crop-buttons-wrap">
+                <button class="crop-cancel cancel-icon">Cancelar</button>
+                <button class="crop-confirm confirm-icon">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="video-editor-popup hidden">
+        <div class="video-container">
+            <video></video>
+        </div>
+        <div class="video-controllers">
+            <div class="cancel-edit icon cancel-icon"></div>
+            <div class="start-video-crop"></div>
+            <div class="play-pause-edit play-icon icon"></div>
+            <div class="end-video-crop"></div>
+            <div class="confirm-edit icon confirm-icon"></div>
+        </div>
+        <div class="video-cropper-box">
+            <div>
+                <div class="slider-cropper">
+                    <div class="video-timer"></div>
+                    <div class="timer-cropper">
+                        <div class="left-cropper"></div>
+                        <div class="mid-cropper"></div>
+                        <div class="right-cropper"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <video class="videoTest" autoplay loop 
+        style="width: 100%; max-height: 500px;">
+    </video>
+    <div class="popup loader-popup hidden ">
+        <span class="loader"></span>
+        <p>Carregando</p>
+    </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/gh/antimatter15/whammy/whammy.js"></script>
+<script src="index.js"></script>
+
+</html>
