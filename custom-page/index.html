@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="cropper.css">
     <script src="cropper.min.js"></script>
+    <link rel="icon" href="data:,">
     <title>Document</title>
 </head>
 <style> 
@@ -60,7 +61,6 @@
             <div class="editor-wrap video hidden">
                 <label for="input-video" class="sub-video-btn sub-icon">Subtituir</label>
                 <button class="edit-video-btn edit-icon">Editar</button>
-                <button class="remove-video-btn remove-icon">Remover</button>
             </div>
             <input id="input-video" class="input-video" type="file" accept="video/*">
             <input class="video-input" type="file" accept="video/*">
@@ -80,12 +80,12 @@
 
     <div class="video-editor-popup hidden">
         <div class="video-container">
-            <video></video>
+            <video muted></video>
         </div>
         <div class="video-controllers">
             <div class="cancel-edit icon cancel-icon"></div>
             <div class="start-video-crop"></div>
-            <div class="play-pause-edit play-icon icon"></div>
+            <div class="play-pause-edit icon"></div>
             <div class="end-video-crop"></div>
             <div class="confirm-edit icon confirm-icon"></div>
         </div>
@@ -102,12 +102,9 @@
             </div>
         </div>
     </div>
-    <video class="videoTest" autoplay loop 
-        style="width: 100%; max-height: 500px;">
-    </video>
     <div class="popup loader-popup hidden ">
         <span class="loader"></span>
-        <p>Carregando</p>
+        <p></p>
     </div>
 </body>
 

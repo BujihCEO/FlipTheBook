@@ -4,13 +4,21 @@ const textInput = document.querySelector('.text-input');
 const frontCover = document.querySelector('.front');
 const sideCorver = document.querySelector('.book>.side');
 const loaderPopup = document.querySelector('.loader-popup');
+const loaderMsg = document.querySelector('.loader-popup>p');
+let onPreview;
 
-function loader(action) {
+function loader(action, msg) {
     if (action === 'on') {
         loaderPopup.classList.remove('hidden');
     }
     if (action === 'off') {
         loaderPopup.classList.add('hidden');
+        loaderMsg.textContent = '';
+    }
+    if (msg) {
+        loaderMsg.textContent = msg;
+    } else {
+        loaderMsg.textContent = 'Carregando';
     }
 }
 
@@ -34,12 +42,14 @@ slider.addEventListener('touchend', () => {
 });
 
 bookContainer.addEventListener('touchstart', (e) => {
+    if (onPreview) return;
     startX = e.touches[0].clientX;
     startValue = parseFloat(slider.value);
     book.classList.add('noTransition');
 });
 
 bookContainer.addEventListener('touchmove', (e) => {
+    if (onPreview) return;
     const deltaX = e.touches[0].clientX - startX;
     const sensitivity = 1; 
     let newValue = startValue + deltaX * sensitivity;
@@ -177,7 +187,6 @@ frontCover.addEventListener('click', ()=> {
 const videoEditorWrap = document.querySelector('.editor-wrap.video');
 const labelVideo = document.querySelector('.label-input.video');
 const editVideoBtn = document.querySelector('.edit-video-btn');
-const removeVideoBtn = document.querySelector('.remove-video-btn');
 const videoPage = document.querySelector('.video-page');
 const inputVideo = document.querySelector('.input-video');
 const videoInput = document.querySelector('.video-input');
@@ -193,23 +202,23 @@ const confirmCrop = document.querySelector('.confirm-edit');
 const sliderCropper = document.querySelector('.slider-cropper');
 const videoTimer = document.querySelector('.video-timer');
 const timerCropper = document.querySelector('.timer-cropper');
-const minPages = 30;
-const maxPages = 60;
-const initialCropRatio = 5;
+const minPages = 5;
+const maxPages = 10;
+const initialCropRatio = 20;
 const minCropRatio = 5;
 const maxCropRatio = 30;
+let fps = 10;
 let videoPages;
 let videoCropStart;
 let videoCropEnd;
 let currentCropRatio;
 let cropSize;
-// const aaaaaaa = document.querySelector('.aaaaa');
 
 
 function updateCropper(type, start, end) {
+    playVideoEditor();
 
     if (type == 'L') {
-        console.log('L');
         videoCropStart = start;
         
         startVideoCrop.textContent = videoCropStart;
@@ -220,7 +229,6 @@ function updateCropper(type, start, end) {
         timerCropper.style.width = `${(videoCropEnd - videoCropStart) * currentCropRatio}px`;
         
     } else if (type == 'R') {
-        console.log('R');
         videoCropEnd = end;
         endVideoCrop.textContent = videoCropEnd;
         videoContainer.currentTime = videoCropEnd / 10;
@@ -228,7 +236,6 @@ function updateCropper(type, start, end) {
         timerCropper.style.width = `${(videoCropEnd - videoCropStart) * currentCropRatio}px`;
         
     } else if (type == 'M' && videoCropStart !== start && videoCropEnd !== end) {
-        console.log('M');
         videoCropEnd = end === true ?
         (start - videoCropStart) + videoCropEnd : end;
 
@@ -239,34 +246,108 @@ function updateCropper(type, start, end) {
         endVideoCrop.textContent = videoCropEnd;
         
         timerCropper.style.left = (videoCropStart * currentCropRatio) + "px";
+    } else {
+        const maxLeft = sliderCropper.parentNode.offsetWidth - sliderCropper.offsetWidth;
+        const newLeft = Math.min(0, Math.max(maxLeft, sliderCropper.offsetLeft));
+        sliderCropper.style.left = newLeft + "px";
+
+        timerCropper.style.left = (videoCropStart * currentCropRatio) + "px";
+        timerCropper.style.width = `${(videoCropEnd - videoCropStart) * currentCropRatio}px`;
     }
+
+    videoTimer.style.setProperty("--start", videoCropStart * currentCropRatio + 'px');
+    videoTimer.style.setProperty("--end", videoCropEnd * currentCropRatio + 'px');
+
+    console.log(videoCropStart, videoCropEnd);
 }
 
 function updateCropRatio(newCropRatio) {
     currentCropRatio = newCropRatio;
     videoTimer.style.width = `${videoPages * currentCropRatio}px`;
-    sliderCropper.style.width = `${videoPages * currentCropRatio}px`;
+    sliderCropper.style.width = `${videoPages * currentCropRatio + 40}px`;
     timerCropper.style.width = `${videoCropEnd * currentCropRatio}px`;
     videoTimer.style.setProperty("--div-w", currentCropRatio + 'px');
 }
 
 let LCstartX = 0;
 let LCinitialLeft = 0;
+let isPanning = false;   // flag para pan
+let isPinching = false;  // flag para pinch
 
 sliderCropper.addEventListener("touchstart", (e) => {
-    if (e.target.closest(".timer-cropper")) return;
-    LCstartX = e.touches[0].clientX;
-    LCinitialLeft = sliderCropper.offsetLeft;
-});
+    if (e.touches.length === 1 && !isPinching) {
+        // início do pan
+        if (e.target.closest(".timer-cropper")) return;
+        isPanning = true;
+        LCstartX = e.touches[0].clientX;
+        LCinitialLeft = sliderCropper.offsetLeft;
+    } else if (e.touches.length === 2) {
+        // início do pinch
+        isPanning = false;
+        isPinching = true;
+
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+        pinchStartRatio = currentCropRatio;
+    }
+}, { passive: false });
 
 sliderCropper.addEventListener("touchmove", (e) => {
-    if (e.target.closest(".timer-cropper")) return;
-    const currentX = e.touches[0].clientX;
-    const deltaX = currentX - LCstartX;
-    const maxLeft = sliderCropper.parentNode.offsetWidth - sliderCropper.offsetWidth; // limite direita
-    const newLeft = Math.min(0, Math.max(maxLeft, LCinitialLeft + deltaX));
-    sliderCropper.style.left = newLeft + "px";
+    if (isPanning && e.touches.length === 1) {
+        if (e.target.closest(".timer-cropper")) return;
+        // mover slider
+        const currentX = e.touches[0].clientX;
+        const deltaX = currentX - LCstartX;
+        const maxLeft = sliderCropper.parentNode.offsetWidth - sliderCropper.offsetWidth;
+        const newLeft = Math.min(0, Math.max(maxLeft, LCinitialLeft + deltaX));
+        sliderCropper.style.left = newLeft + "px";
+    } 
+    else if (isPinching && e.touches.length === 2) {
+        // lógica de pinch (zoom)
+        if (e.cancelable) e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const newDist = Math.sqrt(dx * dx + dy * dy);
+
+        let delta = (newDist - pinchStartDist) / 20;
+        let newCR = pinchStartRatio + Math.round(delta);
+        newCR = Math.min(Math.max(minCropRatio, newCR), maxCropRatio);
+
+        if (newCR !== currentCropRatio) {
+            const cropCenter = Math.round((videoCropStart + videoCropEnd) / 2);
+            let cropDuration = videoCropEnd - videoCropStart;
+
+            updateCropRatio(newCR);
+
+            videoCropStart = Math.max(0, cropCenter - Math.floor(cropDuration / 2));
+            videoCropEnd   = Math.min(videoPages, videoCropStart + cropDuration);
+
+            if (videoCropEnd - videoCropStart < minPages) {
+                videoCropEnd = videoCropStart + minPages;
+            }
+            if (videoCropEnd - videoCropStart > maxPages) {
+                videoCropEnd = videoCropStart + maxPages;
+            }
+            if (videoCropEnd > videoPages) {
+                videoCropEnd = videoPages;
+                videoCropStart = videoPages - (videoCropEnd - videoCropStart);
+            }
+
+            updateCropper("M", videoCropStart, videoCropEnd);
+        }
+    }
+}, { passive: false });
+
+sliderCropper.addEventListener("touchend", (e) => {
+    if (e.touches.length === 0) {
+        isPanning = false;
+        isPinching = false;
+        pinchStartDist = null;
+        pinchStartRatio = null;
+    }
 });
+
 
 const leftCropper = document.querySelector('.left-cropper');
 const rightCropper = document.querySelector('.right-cropper');
@@ -276,17 +357,18 @@ let CropinitialValue;
 
 [timerCropper, leftCropper, rightCropper].forEach((el, i) => {
     el.addEventListener("touchstart", (e) => {
+        if (isPinching) return;
         if (i == 0 && e.target.closest(".left-cropper, .right-cropper")) return;
 
         CropstartX = e.touches[0].clientX;
 
-        // Em vez de pegar offsetLeft, pega a variável de estado
         if (i == 0) CropinitialValue = videoCropStart;
         if (i == 1) CropinitialValue = videoCropStart;
         if (i == 2) CropinitialValue = videoCropEnd;
     });
 
     el.addEventListener("touchmove", (e) => {
+        if (isPinching) return;
         if (i == 0 && e.target.closest(".left-cropper, .right-cropper")) return;
 
         const currentX = e.touches[0].clientX;
@@ -316,22 +398,46 @@ let CropinitialValue;
     });
 });
 
-// sliderCropper.addEventListener("wheel", (e) => { 
-//     e.preventDefault();
+sliderCropper.addEventListener("wheel", (e) => { 
+    e.preventDefault();
 
-//     let newCR = currentCropRatio;
+    // passo do zoom (ajuste a sensibilidade)
+    let newCR = currentCropRatio + Math.round(e.deltaY * -0.2); 
+    newCR = Math.min(Math.max(minCropRatio, newCR), maxCropRatio);
 
-//     newCR += e.deltaY * -0.05;
+    if (newCR === currentCropRatio) return; // sem mudança
 
-//     // Restrict scale
-//     newCR = Math.min(Math.max(minCropRatio, newCR), maxCropRatio);
+    // calcula o centro atual em inteiros
+    const cropCenter = Math.round((videoCropStart + videoCropEnd) / 2);
+    let cropDuration = videoCropEnd - videoCropStart;
 
-//     // updateCropper('M', 0, cropSize);
-//     updateCropRatio(newCR);
-// });
+    // atualiza o ratio
+    updateCropRatio(newCR);
 
-const apiKey = "HXuGjdPH41ijOgJ75Ok8mZGXM49uF9NWO2KMoZG3nDl";
-const videoTest = document.querySelector('.videoTest');
+    // recalcula o start e end mantendo o centro
+    videoCropStart = Math.max(0, cropCenter - Math.floor(cropDuration / 2));
+    videoCropEnd   = Math.min(videoPages, videoCropStart + cropDuration);
+
+    // garante limites min/max
+    if (videoCropEnd - videoCropStart < minPages) {
+        videoCropEnd = videoCropStart + minPages;
+    }
+    if (videoCropEnd - videoCropStart > maxPages) {
+        videoCropEnd = videoCropStart + maxPages;
+    }
+
+    // ajuste final se ultrapassar o limite direito
+    if (videoCropEnd > videoPages) {
+        videoCropEnd = videoPages;
+        videoCropStart = videoPages - (videoCropEnd - videoCropStart);
+    }
+
+    // aplica no cropper
+    updateCropper();
+});
+
+
+
 let videoFile;
 inputVideo.addEventListener('change', (e)=> {
     videoFile = e.target.files[0];
@@ -340,10 +446,11 @@ inputVideo.addEventListener('change', (e)=> {
     const reader = new FileReader();
     reader.onload = async () => {
         videoContainer.src = reader.result;
-        
+        let currentPage = 0;
+        videoTimer.innerHTML = '';
+        sliderCropper.style.left = "0px";
         videoContainer.addEventListener("loadedmetadata", () => {
             videoPages = Math.floor(videoContainer.duration * 10);
-            let currentPage = 0;
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
             function captureFrame() {
@@ -356,7 +463,8 @@ inputVideo.addEventListener('change', (e)=> {
                     updateCropper('M', 0, cropSize);
                     updateCropRatio(initialCropRatio);
                     loader('off');
-                    return
+                    console.log(videoTimer.childElementCount);
+                    return;
                 };
 
                 videoContainer.currentTime = currentPage * 0.1;
@@ -381,193 +489,223 @@ inputVideo.addEventListener('change', (e)=> {
 
                     ctx.drawImage(videoContainer, 0, 0, w, h);
 
-                    // cria thumb
                     const img = document.createElement("img");
                     img.src = canvas.toDataURL("image/jpeg", 0.7);
                     img.width = w;
                     img.height = h;
 
-                    // insere no videoTimer
                     const div = document.createElement("div");
                     div.appendChild(img);
                     videoTimer.appendChild(div);
 
                     videoContainer.removeEventListener("seeked", handler);
 
-                    // próximo frame
                     currentPage++;
                     captureFrame();
                 });
             }
             captureFrame();
-        });
+            
+        }, { once: true });
 
         inputVideo.value = '';
     };
     reader.readAsDataURL(videoFile);
 });
 
-
-
-playPauseBtn.fnt = (action, video = undefined)=> {
-    if (action == 'showPlay') {
-        playPauseBtn.textContent = 'Play';
-        playPauseBtn.classList.remove('hidden');
-        playPauseBtn.onclick = ()=> {
-            book.style.transform = 'rotateY(0deg)';
-            frontCover.classList.add('open');
-            playPauseBtn.classList.add('hidden');
-            sliderWrap.classList.add('hidden');
-            setTimeout(() => {
-                video.play();
-            }, 1000);
-        }
-        video.onended = () => {
-            frontCover.classList.remove('open');
-            setTimeout(() => {
-                playPauseBtn.classList.remove('hidden');
-                sliderWrap.classList.remove('hidden');
-            }, 1000);
-        };
+playPauseBtn.fnt = (url)=> {
+    var video = document.createElement('video');
+    video.src = url;
+    videoPage.replaceChildren(video);
+    playPauseBtn.textContent = 'Play';
+    playPauseBtn.classList.remove('hidden');
+    playPauseBtn.onclick = ()=> {
+        book.style.transform = 'rotateY(0deg)';
+        frontCover.classList.add('open');
+        playPauseBtn.classList.add('hidden');
+        sliderWrap.classList.add('hidden');
+        setTimeout(() => {
+            onPreview = true;
+            video.play();
+        }, 1000);
     }
+    video.onended = () => {
+        frontCover.classList.remove('open');
+        setTimeout(() => {
+            playPauseBtn.classList.remove('hidden');
+            sliderWrap.classList.remove('hidden');
+            video.currentTime = 0;
+            onPreview = false;
+        }, 1000);
+    };
 }
 
-async function waitForVideoReady(videoId) {
-    let state = "";
-    while (state !== "ready") {
-        await new Promise(res => setTimeout(res, 3000)); // espera 3s
-        try {
-            const res = await fetch(`https://ws.api.video/videos/${videoId}`, {
-                headers: { "Authorization": `Bearer ${apiKey}` }
-            });
-            if (res.status === 404) {
-                console.log("Vídeo ainda não registrado, tentando novamente...");
-                continue;
-            }
-            const data = await res.json();
-            state = data.state;
-            console.log("Estado do vídeo:", state);
-        } catch (err) {
-            console.log("Erro ao checar estado, tentando novamente...", err);
-        }
-    }
-}
-
-const statusEl = document.createElement('div');
-
-// confirmCrop.addEventListener('click', async () => {
-//     if (!videoFile) return alert("Nenhum vídeo selecionado!");
-
-//     const inicio = videoCropStart;
-//     const fim = videoCropEnd;
-
-//     statusEl.innerText = "Criando vídeo na API...";
-
-//     try {
-//         // 1. Cria vídeo
-//         const createRes = await fetch("https://ws.api.video/videos", {
-//             method: "POST",
-//             headers: {
-//                 "Authorization": `Bearer ${apiKey}`,
-//                 "Content-Type": "application/json"
-//             },
-//             body: JSON.stringify({ title: videoFile.name, public: false })
-//         });
-//         const videoData = await createRes.json();
-//         const videoId = videoData.videoId;
-//         console.log("Vídeo criado:", videoId);
-
-//         // 2. Upload do arquivo
-//         statusEl.innerText = "Enviando arquivo...";
-//         const formData = new FormData();
-//         formData.append("file", videoFile);
-//         await fetch(`https://ws.api.video/videos/${videoId}/source`, {
-//             method: "POST",
-//             headers: { "Authorization": `Bearer ${apiKey}` },
-//             body: formData
-//         });
-//         console.log("Upload finalizado");
-
-//         // 3. Espera vídeo processar
-//         statusEl.innerText = "Aguardando processamento do vídeo...";
-//         await waitForVideoReady(videoId);
-
-//         // 4. Cria clip cortado
-//         statusEl.innerText = "Criando clip...";
-//         const clipRes = await fetch(`https://ws.api.video/videos/${videoId}/clips`, {
-//             method: "POST",
-//             headers: {
-//                 "Authorization": `Bearer ${apiKey}`,
-//                 "Content-Type": "application/json"
-//             },
-//             body: JSON.stringify({ start: inicio, end: fim })
-//         });
-//         const clipData = await clipRes.json();
-//         console.log("Clip criado:", clipData);
-
-//         // 5. Mostra preview do clip
-//         const clipUrl = clipData.assets.mp4;
-//         const videobook = document.createElement('video');
-//         videobook.src = clipUrl;
-//         videobook.controls = true;
-//         videoPage.replaceChildren(videobook);
-
-//         statusEl.innerText = "Clip pronto e visualizado!";
-//     } catch (err) {
-//         console.error("Erro ao criar clip:", err);
-//         statusEl.innerText = "Erro ao criar clip";
-//     }
-// });
-
-
-async function criarVideoDeFrames(videoEl) {
+async function criarVideoDeFrames(videoEl, start, end) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
 
-    // Cria o stream do canvas
-    const stream = canvas.captureStream(30); // 30 FPS
+    // captura a 10 fps
+    const stream = canvas.captureStream(10);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
     let chunks = [];
     recorder.ondataavailable = e => chunks.push(e.data);
 
     const fim = new Promise(resolve => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
     });
 
     recorder.start();
 
-    // Percorre os frames do vídeo
-    for (let t = 0; t < videoEl.duration; t += 1/30) { // 30fps
-    videoEl.currentTime = t;
-    await new Promise(r => videoEl.onseeked = r);
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    await new Promise(r => setTimeout(r, 1000/30));
+    function drawFrame(now, metadata) {
+        if (videoEl.currentTime >= start && videoEl.currentTime <= end) {
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        }
+
+        const EPSILON = 0.05;
+
+        if (videoEl.currentTime + EPSILON < end && !videoEl.paused && !videoEl.ended) {
+            videoEl.requestVideoFrameCallback(drawFrame);
+        } else {
+            recorder.stop();
+            videoEl.pause();
+        }
     }
 
-    recorder.stop();
-    return fim;
+    // começa no ponto inicial
+    videoEl.currentTime = start;
+
+    await new Promise(r => {
+        videoEl.onseeked = () => {
+        videoEl.onseeked = null;
+        videoEl.play();
+        videoEl.requestVideoFrameCallback(drawFrame);
+            r();
+        };
+    });
+
+  return fim;
 }
 
-confirmCrop.addEventListener("click", async () => {
-    const inicio = videoCropStart;
-    const fim = videoCropEnd;
-    const video = videoContainer;
+let croppedStart;
+let croppedEnd;
+let croppedVideoUrl;
+let croppedVideoCanvas;
 
-    // Garante que o vídeo está carregado
+confirmCrop.addEventListener("click", async () => {
+    croppedStart = videoCropStart;
+    croppedEnd = videoCropEnd;
+    const inicio = videoCropStart / 10;
+    const fim = videoCropEnd / 10;
+    const video = videoContainer;
+    croppedVideoUrl = video.src;
+    croppedVideoCanvas = [...videoTimer.childNodes];
+    croppedVideoPages = videoPages;
+
     if (video.readyState < 2) {
         await new Promise(r => video.onloadeddata = r);
     }
 
-    const blob = await criarVideoDeFrames(video);
-    const url = URL.createObjectURL(blob);
+    loader('on', 'Cortando vídeo');
+    videoEditorPopup.classList.add('hidden');
+    playVideoEditor();
 
-    document.querySelector(".videoTest").src = url;
+    const blob = await criarVideoDeFrames(video, inicio, fim);
+    
+    const file = new File([blob], "video.webm", { type: "video/webm" });
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    videoInput.files = dataTransfer.files;
+    
+    const url = URL.createObjectURL(blob);
+    playPauseBtn.fnt(url);
+    labelVideo.classList.add('hidden');
+    videoEditorWrap.classList.remove('hidden');
+    loader('off');
 });
 
+
+let playInterval = null;
+
+videoContainer.onPlay = (status) => {
+    const video = videoContainer;
+    const step = 1 / fps;
+
+    if (playInterval) clearInterval(playInterval);
+
+    videoContainer.status = status;
+
+    if (status === 'onPlay') {
+        video.currentTime = videoCropStart / fps;
+
+        playInterval = setInterval(() => {
+            if (video.currentTime + step < videoCropEnd / fps && videoContainer.status === 'onPlay') {
+                video.currentTime += step;
+            } else {
+                clearInterval(playInterval);
+                videoContainer.status = 'onReplay';
+                playVideoEditor('onReplay');
+            }
+        }, 1000 / fps);
+    }
+
+    if (status === 'onPause') {
+        video.currentTime = videoCropStart / fps;
+    }
+    
+};
+
+function playVideoEditor(action) {
+    if (action === 'onPlay') {
+        playPauseEdit.classList.remove('play-icon', 'replay-icon');
+        playPauseEdit.classList.add('pause-icon');
+        videoContainer.onPlay('onPlay');
+    } else if (action === 'onPause') {
+        playPauseEdit.classList.remove('pause-icon', 'replay-icon');
+        playPauseEdit.classList.add('play-icon');
+        videoContainer.onPlay('onPause');
+    } else if (action === 'onReplay') {
+        playPauseEdit.classList.remove('pause-icon', 'play-icon');
+        playPauseEdit.classList.add('replay-icon');
+    } else {
+        playPauseEdit.classList.remove('pause-icon', 'replay-icon');
+        playPauseEdit.classList.add('play-icon');
+        videoContainer.onPlay();
+    }
+}
+
+playPauseEdit.addEventListener('click', () => {
+    if (videoContainer.status === 'onPlay') {
+        playVideoEditor('onPause');
+    } else if (videoContainer.status === 'onPause') {
+        playVideoEditor('onPlay');
+    } else if (videoContainer.status === 'onReplay') {
+        playVideoEditor('onPlay');
+    } else {
+        playVideoEditor('onPlay');
+    }
+});
+
+
 cancelEditVideo.addEventListener('click', ()=> {
+    if (croppedVideoUrl && croppedVideoUrl !== videoContainer.src) {
+        videoPages = croppedVideoPages;
+        videoContainer.src = croppedVideoUrl;
+        videoTimer.replaceChildren(...croppedVideoCanvas);
+        console.log(true);
+    } else {
+        console.log(false);
+    }
+    playVideoEditor();
     videoEditorPopup.classList.add('hidden');
+});
+
+editVideoBtn.addEventListener('click', ()=> {
+    updateCropper('M', croppedStart, croppedEnd);
+    sliderCropper.style.left = -(croppedStart * currentCropRatio) + 'px';
+    videoContainer.currentTime = croppedStart / fps;
+    videoEditorPopup.classList.remove('hidden');
 });

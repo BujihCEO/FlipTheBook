@@ -380,7 +380,19 @@
 
 .video-timer {
     display: flex;
-    --div-w: 15px;
+    margin: 0 20px;
+    position: relative;
+    --shadow: #00000099;
+}
+
+.video-timer::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, var(--shadow) 0%, var(--shadow) var(--start),
+        transparent var(--start), transparent var(--end),
+        var(--shadow) var(--end), var(--shadow) 100%);
 }
 
 .video-timer > * {
@@ -394,10 +406,9 @@
     content: '';
     position: absolute;
     height: 6px;
-    width: 6px;
-    border-radius: 50%;
+    width: 2px;
     top: -10px;
-    left: -3px;
+    left: -1px;
     background: white;
 }
 
@@ -413,52 +424,25 @@
     width: 300px;
     display: flex;
     --radius: 10px;
-}
-
-.timer-cropper::before, .timer-cropper::after{
-    content: '';
-    position: absolute;
-    bottom: 0;
-    height: 106px;
-    width: 8px;
-    background:
-    /* círculo vermelho no topo central */
-    radial-gradient(circle 4px at center 4px, red 100%, transparent 100%),
-    /* linha vertical vermelha */
-    linear-gradient(to bottom, red 100%, red 100%);
-    background-repeat: no-repeat;
-    background-size: 
-    8px 8px,      /* tamanho do círculo */
-    2px 100%;     /* largura da linha, altura total */
-    background-position: 
-    center top,   /* círculo central no topo */
-    center center;/* linha no meio */
-}
-
-.timer-cropper::before {
-    left: -4px;
-}
-
-.timer-cropper::after {
-    right: -4px;
+    margin: 0 20px;
 }
 
 .left-cropper, .right-cropper {
+    position: absolute;
     height: 100%;
     width: 20px;
     border: 1px solid white;
     box-sizing: border-box;
-    position: relative;
 }
 
 .left-cropper {
-    left: 0;
+    left: -20px;
     border-bottom-left-radius: var(--radius);
     border-top-left-radius: var(--radius);
 }
 
 .right-cropper {
-    right: 0;
+    right: -20px;
     border-bottom-right-radius: var(--radius);
     border-top-right-radius: var(--radius);
 }
@@ -492,6 +476,10 @@
     --icon: url(https://www.svgrepo.com/show/514191/pause.svg) center / contain;
 }
 
+.replay-icon {
+    --icon: url(https://www.svgrepo.com/show/489110/replay.svg) center / contain;
+}
+
 .confirm-icon {
     --icon: url(https://www.svgrepo.com/show/509324/check.svg) center / contain;
 }
@@ -511,6 +499,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    z-index: 99999;
 }
 
 .popup > p {
