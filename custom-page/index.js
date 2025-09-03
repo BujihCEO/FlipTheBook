@@ -202,8 +202,8 @@ const confirmCrop = document.querySelector('.confirm-edit');
 const sliderCropper = document.querySelector('.slider-cropper');
 const videoTimer = document.querySelector('.video-timer');
 const timerCropper = document.querySelector('.timer-cropper');
-const minPages = 5;
-const maxPages = 10;
+const minPages = 30;
+const maxPages = 60;
 const initialCropRatio = 20;
 const minCropRatio = 5;
 const maxCropRatio = 30;
@@ -258,7 +258,6 @@ function updateCropper(type, start, end) {
     videoTimer.style.setProperty("--start", videoCropStart * currentCropRatio + 'px');
     videoTimer.style.setProperty("--end", videoCropEnd * currentCropRatio + 'px');
 
-    console.log(videoCropStart, videoCropEnd);
 }
 
 function updateCropRatio(newCropRatio) {
@@ -267,6 +266,7 @@ function updateCropRatio(newCropRatio) {
     sliderCropper.style.width = `${videoPages * currentCropRatio + 40}px`;
     timerCropper.style.width = `${videoCropEnd * currentCropRatio}px`;
     videoTimer.style.setProperty("--div-w", currentCropRatio + 'px');
+    videoTimer.style.setProperty("--img-w", (currentCropRatio * 10) + 'px');
 }
 
 let LCstartX = 0;
@@ -439,20 +439,32 @@ sliderCropper.addEventListener("wheel", (e) => {
 
 
 let videoFile;
-inputVideo.addEventListener('change', (e)=> {
+inputVideo.addEventListener('change', (e) => {
     videoFile = e.target.files[0];
     if (!videoFile) return;
     loader('on');
+
     const reader = new FileReader();
     reader.onload = async () => {
         videoContainer.src = reader.result;
         let currentPage = 0;
         videoTimer.innerHTML = '';
         sliderCropper.style.left = "0px";
+
+        const pointers = document.createElement('div');
+        const thumbs = document.createElement('div');
+        videoTimer.append(pointers, thumbs);
+
         videoContainer.addEventListener("loadedmetadata", () => {
             videoPages = Math.floor(videoContainer.duration * 10);
+            for (let i = 0; i < videoPages; i++) {
+                let div = document.createElement('div');
+                pointers.append(div);
+            }
+
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
+
             function captureFrame() {
                 if (currentPage >= videoPages) {
                     cropSize = videoPages > maxPages ? maxPages : videoPages;
@@ -463,9 +475,8 @@ inputVideo.addEventListener('change', (e)=> {
                     updateCropper('M', 0, cropSize);
                     updateCropRatio(initialCropRatio);
                     loader('off');
-                    console.log(videoTimer.childElementCount);
                     return;
-                };
+                }
 
                 videoContainer.currentTime = currentPage * 0.1;
 
@@ -486,32 +497,33 @@ inputVideo.addEventListener('change', (e)=> {
 
                     canvas.width = w;
                     canvas.height = h;
-
                     ctx.drawImage(videoContainer, 0, 0, w, h);
 
-                    const img = document.createElement("img");
-                    img.src = canvas.toDataURL("image/jpeg", 0.7);
+                    const img = new Image();
+                    img.src = canvas.toDataURL("image/jpeg", 0.6); // qualidade mais leve
                     img.width = w;
                     img.height = h;
 
                     const div = document.createElement("div");
                     div.appendChild(img);
-                    videoTimer.appendChild(div);
+                    thumbs.appendChild(div);
 
                     videoContainer.removeEventListener("seeked", handler);
-
                     currentPage++;
-                    captureFrame();
+
+                    // 👇 respira um pouco antes de capturar o próximo
+                    setTimeout(captureFrame, 30);
                 });
             }
+
             captureFrame();
-            
         }, { once: true });
 
         inputVideo.value = '';
     };
     reader.readAsDataURL(videoFile);
 });
+
 
 playPauseBtn.fnt = (url)=> {
     var video = document.createElement('video');

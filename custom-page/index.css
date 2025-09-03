@@ -380,6 +380,7 @@
 
 .video-timer {
     display: flex;
+    flex-direction: column;
     margin: 0 20px;
     position: relative;
     --shadow: #00000099;
@@ -397,12 +398,18 @@
 
 .video-timer > * {
     display: flex;
+}
+
+.video-timer > div:nth-child(1) > div {
+    display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
+    width: var(--div-w);
+    height: 0;
 }
 
-.video-timer > *::before {
+.video-timer > div:nth-child(1) > div:before {
     content: '';
     position: absolute;
     height: 6px;
@@ -412,9 +419,13 @@
     background: white;
 }
 
-.video-timer > * > img {
-    width: var(--div-w);
+.video-timer > div:nth-child(2) {
+
+}
+
+.video-timer > div:nth-child(2) img {
     height: 50px;
+    width: var(--div-w);
     object-fit: cover;
 }
 
