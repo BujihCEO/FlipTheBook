@@ -3,6 +3,7 @@ const book = document.querySelector('.book');
 const textInput = document.querySelector('.text-input');
 const frontCover = document.querySelector('.front');
 const sideCorver = document.querySelector('.book>.side');
+const textTarget = document.querySelector('.book>.side>p');
 const loaderPopup = document.querySelector('.loader-popup');
 const loaderMsg = document.querySelector('.loader-popup>p');
 let onPreview;
@@ -29,8 +30,23 @@ const slider = document.querySelector('.slider-book');
 let startX = 0;        
 let startValue = 0;
 
+function rotateBook(v) {
+    book.style.transform = `rotateY(${v}deg)`;
+    slider.value = v;
+}
+
 slider.addEventListener('input', () => {
     book.style.transform = `rotateY(${slider.value}deg)`;
+});
+
+slider.addEventListener('mousedown', () => {
+    book.classList.add('noTransition');
+    slider.style.cursor = 'grabbing';
+});
+
+slider.addEventListener('mouseup', () => {
+    book.classList.remove('noTransition');
+    slider.style.cursor = '';
 });
 
 slider.addEventListener('touchstart', () => {
@@ -55,30 +71,146 @@ bookContainer.addEventListener('touchmove', (e) => {
     let newValue = startValue + deltaX * sensitivity;
     newValue = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), newValue));
 
-    slider.value = newValue;
-    book.style.transform = `rotateY(${newValue}deg)`;
+    rotateBook(newValue);
 });
 
 bookContainer.addEventListener('touchend', (e) => {
     book.classList.remove('noTransition');
 });
 
+// mouse
+let isDragging = false;
+
+bookContainer.addEventListener('mousedown', (e) => {
+    if (onPreview) return;
+    isDragging = true;
+    startX = e.clientX;
+    startValue = parseFloat(slider.value);
+    book.classList.add('noTransition');
+});
+
+bookContainer.addEventListener('mousemove', (e) => {
+    if (!isDragging || onPreview || e.target == slider) return;
+    e.preventDefault();
+    const deltaX = e.clientX - startX;
+    const sensitivity = 1; 
+    let newValue = startValue + deltaX * sensitivity;
+    newValue = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), newValue));
+    rotateBook(newValue);
+    bookContainer.style.cursor = 'grabbing';
+});
+
+bookContainer.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    book.classList.remove('noTransition');
+    bookContainer.style.cursor = '';
+});
+
 // TEXT //
 
+const modelInput = document.querySelector('.model-input');
+const isApple = /Mac|iPhone|iPod|iPad/i.test(navigator.userAgent);
+
+modelInput.value = isApple ? 'Apple' : 'Outro';
+
 textInput.addEventListener('click', ()=> {
-    book.style.transform = `rotateY(90deg)`;
+    rotateBook(90);
 });
+
+function upadteText() {
+    textTarget.textContent = textInput.value;
+    while (textTarget.offsetWidth + 20 > sideCorver.offsetHeight) {
+        textInput.value = textInput.value.slice(0, -1);
+        textTarget.textContent = textInput.value;
+    }
+}
 
 textInput.addEventListener('input', ()=> {
-    book.style.transform = `rotateY(90deg)`;
-    sideCorver.textContent = textInput.value;
+    rotateBook(90);
+    upadteText();
 });
 
-sideCorver.addEventListener('click', ()=> {
-    book.style.transform = `rotateY(90deg)`;
-    textInput.focus();
+const colorList = [
+    ['#000', '#fff'],
+    ['#fff', '#000']
+]
+
+const colorSlider = document.querySelector('.color-slider');
+function updateColor(c1 = sideCorver.c1, c2 = sideCorver.c2) {
+    sideCorver.style.setProperty('--cover-color', c1);
+    sideCorver.style.setProperty('--text-color', c2);
+    sideCorver.c1 = c1;
+    sideCorver.c2 = c2;
+}
+
+colorList.forEach((cl, i)=>{
+    let div = document.createElement('div');
+    cl.forEach(c => {
+        let cc = document.createElement('div');
+        cc.style.background = c;
+        div.append(cc);
+    });
+    function select() {
+        colorSlider.selected?.classList.remove('selected');
+        div.classList.add('selected');
+        colorSlider.selected = div;
+        updateColor(cl[0], cl[1]);
+    }
+    div.onclick = ()=> {
+        select();
+        rotateBook(60);
+    };
+    if (i === 0) {
+        select();
+    }
+    colorSlider.append(div);
 });
 
+const fontSlider = document.querySelector('.font-slider');
+
+const fontList = [
+    "Great Vibes",
+    "Dancing Script",
+    "Pacifico",
+    "Satisfy",
+    "Courgette",
+    "Amatic SC",
+    "Shadows Into Light"
+];
+
+WebFont.load({
+    google: {
+        families: fontList
+    },
+    active: () => {
+        // Só monta o seletor quando as fontes estiverem carregadas
+        fontList.forEach((font, i) => {
+        let div = document.createElement('div');
+        div.className = "font-option";
+        div.style.fontFamily = font;
+        div.textContent = font;
+
+        function select() {
+            fontSlider.querySelector(".selected")?.classList.remove("selected");
+            div.classList.add("selected");
+            textTarget.style.fontFamily = font;
+            upadteText();
+        }
+
+        div.onclick = () => {
+            select();
+            rotateBook(90);
+        };
+
+        if (i === 0) {
+            select();
+        }
+
+        fontSlider.append(div);
+        });
+    }
+});
 
 // IMAGE //
 
@@ -101,7 +233,7 @@ let lastCanvasData = null;
 inputImage.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    book.style.transform = 'rotate(0deg)';
+    rotateBook(0);
     const reader = new FileReader();
     reader.onload = () => {
         cropImage.src = reader.result;
@@ -153,7 +285,7 @@ cropCancel.addEventListener('click', ()=> {
 });
 
 editImgBtn.addEventListener('click', ()=> {
-    book.style.transform = 'rotate(0deg)';
+    rotateBook(0);
     popupCropper.classList.remove('hidden');
     
     if (cropper && lastCropBoxData && lastCanvasData) {
@@ -168,18 +300,7 @@ removeImgBtn.addEventListener('click', ()=> {
     frontCover.img = false;
     imgEditorWrap.classList.add('hidden');
     labelImage.classList.remove('hidden');
-});
-
-frontCover.addEventListener('click', ()=> {
-    book.style.transform = 'rotate(0deg)';
-    if (frontCover.img == true) {
-        popupCropper.classList.remove('hidden');
-
-        if (cropper && lastCropBoxData && lastCanvasData) {
-            cropper.setCropBoxData(lastCropBoxData);
-            cropper.setCanvasData(lastCanvasData);
-        }
-    }
+    rotateBook(45);
 });
 
 // VIDEO //
@@ -204,7 +325,7 @@ const videoTimer = document.querySelector('.video-timer');
 const timerCropper = document.querySelector('.timer-cropper');
 const minPages = 30;
 const maxPages = 60;
-const initialCropRatio = 20;
+const initialCropRatio = 10;
 const minCropRatio = 5;
 const maxCropRatio = 30;
 let fps = 10;
@@ -216,7 +337,7 @@ let cropSize;
 
 
 function updateCropper(type, start, end) {
-    playVideoEditor();
+    if (type == 'L', type == 'R', type == 'M') playVideoEditor();
 
     if (type == 'L') {
         videoCropStart = start;
@@ -246,7 +367,7 @@ function updateCropper(type, start, end) {
         endVideoCrop.textContent = videoCropEnd;
         
         timerCropper.style.left = (videoCropStart * currentCropRatio) + "px";
-    } else {
+    } else if (type == 'Z') {
         const maxLeft = sliderCropper.parentNode.offsetWidth - sliderCropper.offsetWidth;
         const newLeft = Math.min(0, Math.max(maxLeft, sliderCropper.offsetLeft));
         sliderCropper.style.left = newLeft + "px";
@@ -256,8 +377,8 @@ function updateCropper(type, start, end) {
     }
 
     videoTimer.style.setProperty("--start", videoCropStart * currentCropRatio + 'px');
-    videoTimer.style.setProperty("--end", videoCropEnd * currentCropRatio + 'px');
-
+    videoTimer.style.setProperty("--end", videoCropEnd * currentCropRatio + currentCropRatio + 'px');
+    updateTimePointer();
 }
 
 function updateCropRatio(newCropRatio) {
@@ -266,13 +387,22 @@ function updateCropRatio(newCropRatio) {
     sliderCropper.style.width = `${videoPages * currentCropRatio + 40}px`;
     timerCropper.style.width = `${videoCropEnd * currentCropRatio}px`;
     videoTimer.style.setProperty("--div-w", currentCropRatio + 'px');
-    videoTimer.style.setProperty("--img-w", (currentCropRatio * 10) + 'px');
 }
+
+function updateTimePointer() {
+    let v = (videoContainer.currentTime * fps) * currentCropRatio + 20;
+    sliderCropper.style.setProperty("--time", v + 'px');
+}
+
 
 let LCstartX = 0;
 let LCinitialLeft = 0;
 let isPanning = false;   // flag para pan
 let isPinching = false;  // flag para pinch
+
+function clamp(val, min, max) {
+    return Math.min(Math.max(val, min), max);
+}
 
 sliderCropper.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1 && !isPinching) {
@@ -334,7 +464,7 @@ sliderCropper.addEventListener("touchmove", (e) => {
                 videoCropStart = videoPages - (videoCropEnd - videoCropStart);
             }
 
-            updateCropper("M", videoCropStart, videoCropEnd);
+            updateCropper("Z", videoCropStart, videoCropEnd);
         }
     }
 }, { passive: false });
@@ -348,17 +478,44 @@ sliderCropper.addEventListener("touchend", (e) => {
     }
 });
 
+sliderCropper.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // só botão esquerdo
+    if (e.target.closest(".timer-cropper")) return;
 
+    isPanning = true;
+    LCstartX = e.clientX;
+    LCinitialLeft = sliderCropper.offsetLeft;
+    sliderCropper.style.cursor = 'grabbing';
+
+    const onMouseMove = (ev) => {
+        if (!isPanning) return;
+        const deltaX = ev.clientX - LCstartX;
+        const maxLeft = sliderCropper.parentNode.offsetWidth - sliderCropper.offsetWidth;
+        const newLeft = clamp(LCinitialLeft + deltaX, maxLeft, 0);
+        sliderCropper.style.left = newLeft + "px";
+    };
+
+    const onMouseUp = () => {
+        isPanning = false;
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        sliderCropper.style.cursor = '';
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+});
+
+const midCropper = document.querySelector('.mid-cropper');
 const leftCropper = document.querySelector('.left-cropper');
 const rightCropper = document.querySelector('.right-cropper');
 
 let CropstartX;
 let CropinitialValue;
 
-[timerCropper, leftCropper, rightCropper].forEach((el, i) => {
+[midCropper, leftCropper, rightCropper].forEach((el, i) => {
     el.addEventListener("touchstart", (e) => {
         if (isPinching) return;
-        if (i == 0 && e.target.closest(".left-cropper, .right-cropper")) return;
 
         CropstartX = e.touches[0].clientX;
 
@@ -369,7 +526,6 @@ let CropinitialValue;
 
     el.addEventListener("touchmove", (e) => {
         if (isPinching) return;
-        if (i == 0 && e.target.closest(".left-cropper, .right-cropper")) return;
 
         const currentX = e.touches[0].clientX;
         const deltaX = currentX - CropstartX;
@@ -396,7 +552,46 @@ let CropinitialValue;
             updateCropper('R', videoCropStart, newValue);
         }
     });
+
+
+    el.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+
+        CropstartX = e.clientX;
+        CropinitialValue = (i === 2) ? videoCropEnd : videoCropStart;
+        if (i === 0) el.style.cursor = 'grabbing';
+
+        const onMouseMove = (ev) => {
+            e.preventDefault();
+            const deltaX = ev.clientX - CropstartX;
+            let newValue = CropinitialValue + Math.round(deltaX / currentCropRatio);
+
+            if (i === 0) {
+                newValue = clamp(newValue, 0, videoPages - (videoCropEnd - videoCropStart));
+                updateCropper('M', newValue, true);
+            }
+            if (i === 1) {
+                newValue = clamp(newValue, Math.max(0, videoCropEnd - maxPages), videoCropEnd - minPages);
+                if (videoCropStart !== newValue) updateCropper('L', newValue, videoCropEnd);
+            }
+            if (i === 2) {
+                newValue = clamp(newValue, videoCropStart + minPages, Math.min(videoPages, videoCropStart + maxPages));
+                if (videoCropEnd !== newValue) updateCropper('R', videoCropStart, newValue);
+            }
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+            if (i === 0) el.style.cursor = '';
+        };
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+    });
 });
+
+
 
 sliderCropper.addEventListener("wheel", (e) => { 
     e.preventDefault();
@@ -433,10 +628,8 @@ sliderCropper.addEventListener("wheel", (e) => {
     }
 
     // aplica no cropper
-    updateCropper();
+    updateCropper('Z');
 });
-
-
 
 let videoFile;
 inputVideo.addEventListener('change', (e) => {
@@ -451,106 +644,87 @@ inputVideo.addEventListener('change', (e) => {
         videoTimer.innerHTML = '';
         sliderCropper.style.left = "0px";
 
-        const pointers = document.createElement('div');
-        const thumbs = document.createElement('div');
-        videoTimer.append(pointers, thumbs);
+        // // const pointers = document.createElement('div');
+        // // const thumbs = document.createElement('div');
+        // videoTimer.append(pointers, thumbs);
 
         videoContainer.addEventListener("loadedmetadata", () => {
             videoPages = Math.floor(videoContainer.duration * 10);
             for (let i = 0; i < videoPages; i++) {
                 let div = document.createElement('div');
-                pointers.append(div);
+                videoTimer.append(div);
             }
 
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
+            cropSize = videoPages > maxPages ? maxPages : videoPages;
+            CropstartX = 0;
+            CropinitialValue = 0;
+            currentCropRatio = initialCropRatio;
+            videoEditorPopup.classList.remove('hidden');
+            updateCropper('M', 0, cropSize);
+            updateCropRatio(initialCropRatio);
+            loader('off');
 
-            function captureFrame() {
-                if (currentPage >= videoPages) {
-                    cropSize = videoPages > maxPages ? maxPages : videoPages;
-                    CropstartX = 0;
-                    CropinitialValue = 0;
-                    currentCropRatio = initialCropRatio;
-                    videoEditorPopup.classList.remove('hidden');
-                    updateCropper('M', 0, cropSize);
-                    updateCropRatio(initialCropRatio);
-                    loader('off');
-                    return;
-                }
+            // const canvas = document.createElement("canvas");
+            // const ctx = canvas.getContext("2d");
 
-                videoContainer.currentTime = currentPage * 0.1;
+            // function captureFrame() {
+            //     if (currentPage >= videoPages) {
+            //         cropSize = videoPages > maxPages ? maxPages : videoPages;
+            //         CropstartX = 0;
+            //         CropinitialValue = 0;
+            //         currentCropRatio = initialCropRatio;
+            //         videoEditorPopup.classList.remove('hidden');
+            //         updateCropper('M', 0, cropSize);
+            //         updateCropRatio(initialCropRatio);
+            //         loader('off');
+            //         return;
+            //     }
 
-                videoContainer.addEventListener("seeked", function handler() {
-                    let w = videoContainer.videoWidth;
-                    let h = videoContainer.videoHeight;
+            //     videoContainer.currentTime = currentPage * 0.1;
 
-                    const maxSize = 50;
-                    if (w > h) {
-                        const scale = maxSize / w;
-                        w = maxSize;
-                        h = Math.round(h * scale);
-                    } else {
-                        const scale = maxSize / h;
-                        h = maxSize;
-                        w = Math.round(w * scale);
-                    }
+            //     videoContainer.addEventListener("seeked", function handler() {
+            //         let w = videoContainer.videoWidth;
+            //         let h = videoContainer.videoHeight;
 
-                    canvas.width = w;
-                    canvas.height = h;
-                    ctx.drawImage(videoContainer, 0, 0, w, h);
+            //         const maxSize = 50;
+            //         if (w > h) {
+            //             const scale = maxSize / w;
+            //             w = maxSize;
+            //             h = Math.round(h * scale);
+            //         } else {
+            //             const scale = maxSize / h;
+            //             h = maxSize;
+            //             w = Math.round(w * scale);
+            //         }
 
-                    const img = new Image();
-                    img.src = canvas.toDataURL("image/jpeg", 0.6); // qualidade mais leve
-                    img.width = w;
-                    img.height = h;
+            //         canvas.width = w;
+            //         canvas.height = h;
+            //         ctx.drawImage(videoContainer, 0, 0, w, h);
 
-                    const div = document.createElement("div");
-                    div.appendChild(img);
-                    thumbs.appendChild(div);
+            //         const img = new Image();
+            //         img.src = canvas.toDataURL("image/jpeg", 0.6); // qualidade mais leve
+            //         img.width = w;
+            //         img.height = h;
 
-                    videoContainer.removeEventListener("seeked", handler);
-                    currentPage++;
+            //         const div = document.createElement("div");
+            //         div.appendChild(img);
+            //         thumbs.appendChild(div);
 
-                    // 👇 respira um pouco antes de capturar o próximo
-                    setTimeout(captureFrame, 30);
-                });
-            }
+            //         videoContainer.removeEventListener("seeked", handler);
+            //         currentPage++;
 
-            captureFrame();
+            //         // 👇 respira um pouco antes de capturar o próximo
+            //         setTimeout(captureFrame, 30);
+            //     });
+            // }
+
+            // captureFrame();
         }, { once: true });
 
         inputVideo.value = '';
     };
     reader.readAsDataURL(videoFile);
 });
-
-
-playPauseBtn.fnt = (url)=> {
-    var video = document.createElement('video');
-    video.src = url;
-    videoPage.replaceChildren(video);
-    playPauseBtn.textContent = 'Play';
-    playPauseBtn.classList.remove('hidden');
-    playPauseBtn.onclick = ()=> {
-        book.style.transform = 'rotateY(0deg)';
-        frontCover.classList.add('open');
-        playPauseBtn.classList.add('hidden');
-        sliderWrap.classList.add('hidden');
-        setTimeout(() => {
-            onPreview = true;
-            video.play();
-        }, 1000);
-    }
-    video.onended = () => {
-        frontCover.classList.remove('open');
-        setTimeout(() => {
-            playPauseBtn.classList.remove('hidden');
-            sliderWrap.classList.remove('hidden');
-            video.currentTime = 0;
-            onPreview = false;
-        }, 1000);
-    };
-}
 
 async function criarVideoDeFrames(videoEl, start, end) {
     const canvas = document.createElement("canvas");
@@ -607,6 +781,43 @@ let croppedEnd;
 let croppedVideoUrl;
 let croppedVideoCanvas;
 
+function bookPlayer(url) {
+    const video = document.createElement('video')
+    video.src = url;
+    videoPage.replaceChildren(video);
+    let paused;
+
+    playPauseBtn.classList.remove('hidden');
+    playPauseBtn.classList.add('play-icon');
+    playPauseBtn.textContent = 'Play'; 
+
+    playPauseBtn.onclick = () => {
+        if (paused) {
+
+        } else {
+
+        }
+        onPreview = true;
+        rotateBook(0);
+        frontCover.classList.add('open');
+        playPauseBtn.classList.add('hidden');
+        sliderWrap.classList.add('hidden');
+        setTimeout(() => {
+            video.play();
+        }, 1000);
+    };
+    video.onended = () => {
+        frontCover.classList.remove('open');
+        setTimeout(() => {
+            paused = true;
+            onPreview = false;
+            video.currentTime = 0;
+            playPauseBtn.classList.remove('hidden');
+            sliderWrap.classList.remove('hidden');
+        }, 1000);
+    }
+}
+
 confirmCrop.addEventListener("click", async () => {
     croppedStart = videoCropStart;
     croppedEnd = videoCropEnd;
@@ -633,12 +844,11 @@ confirmCrop.addEventListener("click", async () => {
     videoInput.files = dataTransfer.files;
     
     const url = URL.createObjectURL(blob);
-    playPauseBtn.fnt(url);
+    bookPlayer(url);
     labelVideo.classList.add('hidden');
     videoEditorWrap.classList.remove('hidden');
     loader('off');
 });
-
 
 let playInterval = null;
 
@@ -652,10 +862,11 @@ videoContainer.onPlay = (status) => {
 
     if (status === 'onPlay') {
         video.currentTime = videoCropStart / fps;
-
+        updateTimePointer();
         playInterval = setInterval(() => {
             if (video.currentTime + step < videoCropEnd / fps && videoContainer.status === 'onPlay') {
                 video.currentTime += step;
+                updateTimePointer();
             } else {
                 clearInterval(playInterval);
                 videoContainer.status = 'onReplay';
@@ -666,6 +877,7 @@ videoContainer.onPlay = (status) => {
 
     if (status === 'onPause') {
         video.currentTime = videoCropStart / fps;
+        updateTimePointer();
     }
     
 };
@@ -701,7 +913,6 @@ playPauseEdit.addEventListener('click', () => {
     }
 });
 
-
 cancelEditVideo.addEventListener('click', ()=> {
     if (croppedVideoUrl && croppedVideoUrl !== videoContainer.src) {
         videoPages = croppedVideoPages;
@@ -719,5 +930,6 @@ editVideoBtn.addEventListener('click', ()=> {
     updateCropper('M', croppedStart, croppedEnd);
     sliderCropper.style.left = -(croppedStart * currentCropRatio) + 'px';
     videoContainer.currentTime = croppedStart / fps;
+    updateTimePointer();
     videoEditorPopup.classList.remove('hidden');
 });

@@ -13,6 +13,7 @@
 
 :root {
     font-family: sans-serif;
+    font-size: 14px;
 }
 
 </style>
@@ -24,7 +25,7 @@
                 <div class="video-page"></div>
                 <div class="advise">Parte não visível</div>
                 <div class="front"></div>
-                <div class="side">SEU TEXTO</div>
+                <div class="side"><p></p></div>
                 <div class="back"></div>
                 <div class="pages"></div>
                 <div class="shadow"></div>
@@ -41,6 +42,9 @@
         <div>
             <h1>Texto</h1>
             <input type="text" class="text-input" id="text" placeholder="Digite o texto aqui...">
+            <input type="hidden" class="model-input">
+            <div class="color-slider slider"></div>
+            <div class="font-slider slider"></div>
         </div>
         
         <div>
@@ -102,13 +106,13 @@
             </div>
         </div>
     </div>
+
     <div class="popup loader-popup hidden ">
         <span class="loader"></span>
         <p></p>
     </div>
 </body>
-
-<script src="https://cdn.jsdelivr.net/gh/antimatter15/whammy/whammy.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
 <script src="index.js"></script>
 
 </html>
