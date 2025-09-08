@@ -36,6 +36,7 @@ function rotateBook(v) {
 }
 
 slider.addEventListener('input', () => {
+    
     book.style.transform = `rotateY(${slider.value}deg)`;
 });
 
@@ -637,93 +638,31 @@ inputVideo.addEventListener('change', (e) => {
     if (!videoFile) return;
     loader('on');
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-        videoContainer.src = reader.result;
-        let currentPage = 0;
-        videoTimer.innerHTML = '';
-        sliderCropper.style.left = "0px";
+    // Use URL.createObjectURL em vez de FileReader
+    const videoURL = URL.createObjectURL(videoFile);
+    videoContainer.src = videoURL;
 
-        // // const pointers = document.createElement('div');
-        // // const thumbs = document.createElement('div');
-        // videoTimer.append(pointers, thumbs);
+    videoTimer.innerHTML = '';
+    sliderCropper.style.left = "0px";
 
-        videoContainer.addEventListener("loadedmetadata", () => {
-            videoPages = Math.floor(videoContainer.duration * 10);
-            for (let i = 0; i < videoPages; i++) {
-                let div = document.createElement('div');
-                videoTimer.append(div);
-            }
+    videoContainer.addEventListener("loadedmetadata", () => {
+        videoPages = Math.floor(videoContainer.duration * 10);
+        for (let i = 0; i < videoPages; i++) {
+            let div = document.createElement('div');
+            videoTimer.append(div);
+        }
 
-            cropSize = videoPages > maxPages ? maxPages : videoPages;
-            CropstartX = 0;
-            CropinitialValue = 0;
-            currentCropRatio = initialCropRatio;
-            videoEditorPopup.classList.remove('hidden');
-            updateCropper('M', 0, cropSize);
-            updateCropRatio(initialCropRatio);
-            loader('off');
+        cropSize = videoPages > maxPages ? maxPages : videoPages;
+        CropstartX = 0;
+        CropinitialValue = 0;
+        currentCropRatio = initialCropRatio;
+        videoEditorPopup.classList.remove('hidden');
+        updateCropper('M', 0, cropSize);
+        updateCropRatio(initialCropRatio);
+        loader('off');
+    }, { once: true });
 
-            // const canvas = document.createElement("canvas");
-            // const ctx = canvas.getContext("2d");
-
-            // function captureFrame() {
-            //     if (currentPage >= videoPages) {
-            //         cropSize = videoPages > maxPages ? maxPages : videoPages;
-            //         CropstartX = 0;
-            //         CropinitialValue = 0;
-            //         currentCropRatio = initialCropRatio;
-            //         videoEditorPopup.classList.remove('hidden');
-            //         updateCropper('M', 0, cropSize);
-            //         updateCropRatio(initialCropRatio);
-            //         loader('off');
-            //         return;
-            //     }
-
-            //     videoContainer.currentTime = currentPage * 0.1;
-
-            //     videoContainer.addEventListener("seeked", function handler() {
-            //         let w = videoContainer.videoWidth;
-            //         let h = videoContainer.videoHeight;
-
-            //         const maxSize = 50;
-            //         if (w > h) {
-            //             const scale = maxSize / w;
-            //             w = maxSize;
-            //             h = Math.round(h * scale);
-            //         } else {
-            //             const scale = maxSize / h;
-            //             h = maxSize;
-            //             w = Math.round(w * scale);
-            //         }
-
-            //         canvas.width = w;
-            //         canvas.height = h;
-            //         ctx.drawImage(videoContainer, 0, 0, w, h);
-
-            //         const img = new Image();
-            //         img.src = canvas.toDataURL("image/jpeg", 0.6); // qualidade mais leve
-            //         img.width = w;
-            //         img.height = h;
-
-            //         const div = document.createElement("div");
-            //         div.appendChild(img);
-            //         thumbs.appendChild(div);
-
-            //         videoContainer.removeEventListener("seeked", handler);
-            //         currentPage++;
-
-            //         // 👇 respira um pouco antes de capturar o próximo
-            //         setTimeout(captureFrame, 30);
-            //     });
-            // }
-
-            // captureFrame();
-        }, { once: true });
-
-        inputVideo.value = '';
-    };
-    reader.readAsDataURL(videoFile);
+    inputVideo.value = '';
 });
 
 async function criarVideoDeFrames(videoEl, start, end) {
