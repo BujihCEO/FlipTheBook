@@ -672,7 +672,6 @@ async function criarVideoDeFrames(videoEl, start, end) {
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
 
-    // captura a 10 fps
     const stream = canvas.captureStream(10);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
@@ -683,19 +682,23 @@ async function criarVideoDeFrames(videoEl, start, end) {
         recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
     });
 
-    recorder.start();
+    let started = false;
 
     function drawFrame(now, metadata) {
         if (videoEl.currentTime >= start && videoEl.currentTime <= end) {
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+            if (!started) {
+                recorder.start();   // só começa a gravar depois do 1º drawImage
+                started = true;
+            }
         }
 
         const EPSILON = 0.05;
-
         if (videoEl.currentTime + EPSILON < end && !videoEl.paused && !videoEl.ended) {
             videoEl.requestVideoFrameCallback(drawFrame);
         } else {
-            recorder.stop();
+            if (started) recorder.stop();
             videoEl.pause();
         }
     }
@@ -705,15 +708,16 @@ async function criarVideoDeFrames(videoEl, start, end) {
 
     await new Promise(r => {
         videoEl.onseeked = () => {
-        videoEl.onseeked = null;
-        videoEl.play();
-        videoEl.requestVideoFrameCallback(drawFrame);
+            videoEl.onseeked = null;
+            videoEl.play();
+            videoEl.requestVideoFrameCallback(drawFrame);
             r();
         };
     });
 
-  return fim;
+    return fim;
 }
+
 
 let croppedStart;
 let croppedEnd;
