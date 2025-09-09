@@ -364,8 +364,6 @@ function updateCropper(type, start, end) {
         videoCropStart = start;
         startVideoCrop.textContent = videoCropStart;
         videoContainer.currentTime = videoCropStart / 10;
-        videoContainer.load();
-        videoContainer.pause();
         
         endVideoCrop.textContent = videoCropEnd;
         
