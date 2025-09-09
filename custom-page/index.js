@@ -358,25 +358,18 @@ function updateCropper(type, start, end) {
         timerCropper.style.width = `${(videoCropEnd - videoCropStart) * currentCropRatio}px`;
         
     } else if (type == 'M' && videoCropStart !== start && videoCropEnd !== end) {
-    videoCropEnd = end === true ?
+        videoCropEnd = end === true ?
         (start - videoCropStart) + videoCropEnd : end;
 
-    videoCropStart = start;
-    startVideoCrop.textContent = videoCropStart;
-
-    // Atualiza posição
-    videoContainer.currentTime = videoCropStart / 10;
-
-    // Safari iOS precisa disso para realmente mostrar o frame
-    const forceRender = () => {
+        videoCropStart = start;
+        startVideoCrop.textContent = videoCropStart;
+        videoContainer.currentTime = videoCropStart / 10;
+        videoContainer.load();
         videoContainer.pause();
-        videoContainer.removeEventListener("seeked", forceRender);
-    };
-    videoContainer.addEventListener("seeked", forceRender);
-    videoContainer.play().then(() => videoContainer.pause()).catch(() => {});
-
-    endVideoCrop.textContent = videoCropEnd;
-    timerCropper.style.left = (videoCropStart * currentCropRatio) + "px";
+        
+        endVideoCrop.textContent = videoCropEnd;
+        
+        timerCropper.style.left = (videoCropStart * currentCropRatio) + "px";
     } else if (type == 'Z') {
         const maxLeft = sliderCropper.parentNode.offsetWidth - sliderCropper.offsetWidth;
         const newLeft = Math.min(0, Math.max(maxLeft, sliderCropper.offsetLeft));
