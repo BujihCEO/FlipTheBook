@@ -19,35 +19,37 @@
 
 </style>
 <body>
-    <div class="main"> 
-
-        <div class="book-container">
-            <div class="book">
-                <div class="video-page"></div>
-                <div class="advise">Parte não visível</div>
-                <div class="front"></div>
-                <div class="side"><p>Seu texto</p></div>
-                <div class="back"></div>
-                <div class="pages"></div>
-                <div class="shadow"></div>
-            </div>
-            <div class="book-settings">
-                <button class="play-pause-btn hidden"></button>
-                <div class="slider-wrap">
-                    <input class="slider-book" type="range" min="-45" max="225" value="45">
-                </div>
+    <div class="book-container">
+        <div class="book">
+            <div class="video-page"></div>
+            <div class="advise">Parte não visível</div>
+            <div class="front"></div>
+            <div class="side"><p>Seu texto</p></div>
+            <div class="back"></div>
+            <div class="pages"></div>
+            <div class="shadow"></div>
+        </div>
+        <div class="book-settings">
+            <button class="play-pause-btn hidden"></button>
+            <div class="slider-wrap">
+                <input class="slider-book" type="range" min="-45" max="225" value="45">
             </div>
         </div>
-
-
+    </div>
+    <div class="main">
         <div>
             <h1>Texto</h1>
-            <input type="text" class="text-input" id="text" placeholder="Digite o texto aqui...">
+            <div>
+                <input type="text" class="text-input" id="text" 
+                placeholder="Digite o texto aqui...">
+            </div>
+            <h2>Cor</h2>
             <div class="color-slider slider"></div>
+            <h2>Fonte</h2>
             <div class="font-slider slider"></div>
             <input type="hidden" class="model-input"> 
-            <input type="text" class="color-input">
-            <input type="text" class="font-input">
+            <input type="text" class="color-input hidden">
+            <input type="text" class="font-input hidden">
         </div>
         
         <div>

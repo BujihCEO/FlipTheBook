@@ -127,6 +127,11 @@ function upadteText() {
         textInput.value = textInput.value.slice(0, -1);
         textTarget.textContent = textInput.value;
     }
+    if (textInput.value === '') {
+        fontInput.value = '';
+    } else {
+        fontInput.value = fontInput.backup;
+    }
 }
 
 textInput.addEventListener('input', ()=> {
@@ -159,25 +164,33 @@ function updateColor(c1 = sideCorver.c1, c2 = sideCorver.c2) {
 
 colorSlider.create = () => {
     colorList.forEach((c, i) => {
+        let wrap = document.createElement('div');
         let input = document.createElement('input');
-        
-        // cria o color picker
-        new JSColor(input, {
+        input.type = 'button';
+        let picker = new JSColor(input, {
             value: c,
             closeButton: false,
+            palette: null,
+            onInput: () => {
+                if (i == 0) {
+                    updateColor(picker.toHEXString(), false);
+                } else {
+                    updateColor(false, picker.toHEXString());
+                }
+            }
         });
 
-        // define ação quando mudar
         if (i === 0) {
-            input.oninput = () => updateColor(input.value, false);
-            updateColor(c, false); // inicializa
+            updateColor(c, false);
+            wrap.textContent = 'Fundo';
         } else {
-            input.oninput = () => updateColor(false, input.value);
-            updateColor(false, c); // inicializa
+            updateColor(false, c);
+            wrap.textContent = 'Texto';
         }
 
         colorPickers.push(input);
-        colorSlider.append(input);
+        wrap.append(input);
+        colorSlider.append(wrap);
     });
 }
 
@@ -210,7 +223,10 @@ WebFont.load({
             fontSlider.querySelector(".selected")?.classList.remove("selected");
             div.classList.add("selected");
             textTarget.style.fontFamily = font;
-            fontInput.value = font;
+            fontInput.backup = font;
+            if (textInput.value !== '') {
+                fontInput.value = font;
+            }
             upadteText();
         }
 
