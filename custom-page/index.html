@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="cropper.css">
     <script src="cropper.min.js"></script>
+    <script src="jscolor.js"></script>
     <link rel="icon" href="data:,">
     <title>Document</title>
 </head>
@@ -25,7 +26,7 @@
                 <div class="video-page"></div>
                 <div class="advise">Parte não visível</div>
                 <div class="front"></div>
-                <div class="side"><p></p></div>
+                <div class="side"><p>Seu texto</p></div>
                 <div class="back"></div>
                 <div class="pages"></div>
                 <div class="shadow"></div>
@@ -42,9 +43,11 @@
         <div>
             <h1>Texto</h1>
             <input type="text" class="text-input" id="text" placeholder="Digite o texto aqui...">
-            <input type="hidden" class="model-input">
             <div class="color-slider slider"></div>
             <div class="font-slider slider"></div>
+            <input type="hidden" class="model-input"> 
+            <input type="text" class="color-input">
+            <input type="text" class="font-input">
         </div>
         
         <div>

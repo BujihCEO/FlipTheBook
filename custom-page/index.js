@@ -112,6 +112,8 @@ bookContainer.addEventListener('mouseup', () => {
 
 const modelInput = document.querySelector('.model-input');
 const isApple = /Mac|iPhone|iPod|iPad/i.test(navigator.userAgent);
+const colorInput = document.querySelector('.color-input');
+const fontInput = document.querySelector('.font-input');
 
 modelInput.value = isApple ? 'Apple' : 'Outro';
 
@@ -132,41 +134,54 @@ textInput.addEventListener('input', ()=> {
     upadteText();
 });
 
-const colorList = [
-    ['#000', '#fff'],
-    ['#fff', '#000']
-]
+jscolor.presets.default = {
+    width: Math.min(460, Math.max(window.innerWidth - 57)), height:165, 
+    closeButton: true, closeText: '', sliderSize: 15
+};
 
+const colorList = ['#000', '#fff'];
 const colorSlider = document.querySelector('.color-slider');
+var colorPickers = [];
+
 function updateColor(c1 = sideCorver.c1, c2 = sideCorver.c2) {
-    sideCorver.style.setProperty('--cover-color', c1);
-    sideCorver.style.setProperty('--text-color', c2);
-    sideCorver.c1 = c1;
-    sideCorver.c2 = c2;
+    if (c1) {
+        sideCorver.style.setProperty('--cover-color', c1);
+        sideCorver.c1 = c1;
+        c2 = sideCorver.c2;
+    }
+    if (c2) {
+        sideCorver.style.setProperty('--text-color', c2);
+        sideCorver.c2 = c2;
+        c1 = sideCorver.c1;
+    }
+    colorInput.value = `${c1}, ${c2}`;
 }
 
-colorList.forEach((cl, i)=>{
-    let div = document.createElement('div');
-    cl.forEach(c => {
-        let cc = document.createElement('div');
-        cc.style.background = c;
-        div.append(cc);
+colorSlider.create = () => {
+    colorList.forEach((c, i) => {
+        let input = document.createElement('input');
+        
+        // cria o color picker
+        new JSColor(input, {
+            value: c,
+            closeButton: false,
+        });
+
+        // define ação quando mudar
+        if (i === 0) {
+            input.oninput = () => updateColor(input.value, false);
+            updateColor(c, false); // inicializa
+        } else {
+            input.oninput = () => updateColor(false, input.value);
+            updateColor(false, c); // inicializa
+        }
+
+        colorPickers.push(input);
+        colorSlider.append(input);
     });
-    function select() {
-        colorSlider.selected?.classList.remove('selected');
-        div.classList.add('selected');
-        colorSlider.selected = div;
-        updateColor(cl[0], cl[1]);
-    }
-    div.onclick = ()=> {
-        select();
-        rotateBook(60);
-    };
-    if (i === 0) {
-        select();
-    }
-    colorSlider.append(div);
-});
+}
+
+colorSlider.create();
 
 const fontSlider = document.querySelector('.font-slider');
 
@@ -185,7 +200,6 @@ WebFont.load({
         families: fontList
     },
     active: () => {
-        // Só monta o seletor quando as fontes estiverem carregadas
         fontList.forEach((font, i) => {
         let div = document.createElement('div');
         div.className = "font-option";
@@ -196,6 +210,7 @@ WebFont.load({
             fontSlider.querySelector(".selected")?.classList.remove("selected");
             div.classList.add("selected");
             textTarget.style.fontFamily = font;
+            fontInput.value = font;
             upadteText();
         }
 
@@ -875,4 +890,11 @@ editVideoBtn.addEventListener('click', ()=> {
     videoContainer.currentTime = croppedStart / fps;
     updateTimePointer();
     videoEditorPopup.classList.remove('hidden');
+});
+
+
+window.addEventListener('resize', ()=> {
+    colorPickers.forEach(e => {
+        e.jscolor.width = Math.min(460, Math.max(window.innerWidth - 57));
+    });
 });

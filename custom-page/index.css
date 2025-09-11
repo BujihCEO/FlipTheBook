@@ -150,7 +150,6 @@
     padding: 0;
     color: var(--text-color);
     font-weight: bold;
-    transition: .5s ease-in-out;
 }
 
 .book > .side > p {
@@ -244,9 +243,18 @@
     border: 2px solid red;
 }
 
-.color-slider > div > div {
+.color-slider > div::before, .color-slider > div::after {
+    content: '';
     height: 100%;
     width: 50%;
+}
+
+.color-slider > div::before {
+    background: var(--bg-color);
+}
+
+.color-slider > div::after {
+    background: var(--font-color);
 }
 
 .font-slider {
@@ -693,4 +701,16 @@
 
 input[type="file"] {
     display: none !important;
+}
+
+.jscolor {
+    padding: 28px 0 0 0 !important;
+    width: 0px;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.jscolor-wrap {
+    left: 50% !important;
+    transform: translate(-50%, 0);
 }
