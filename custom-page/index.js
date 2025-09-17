@@ -139,6 +139,13 @@ textInput.addEventListener('input', ()=> {
     upadteText();
 });
 
+textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        textInput.blur();
+    }
+});
+
 jscolor.presets.default = {
     width: Math.min(460, Math.max(window.innerWidth - 57)), height:165, 
     closeButton: true, closeText: '', sliderSize: 15
