@@ -357,7 +357,7 @@ const videoTimer = document.querySelector('.video-timer');
 const timerCropper = document.querySelector('.timer-cropper');
 const minPages = 30;
 const maxPages = 60;
-const initialCropRatio = 30;
+const initialCropRatio = 5;
 const minCropRatio = 5;
 const maxCropRatio = 30;
 let fps = 10;
@@ -670,12 +670,24 @@ inputVideo.addEventListener('change', (e) => {
     loader('on');
 
     const videoURL = URL.createObjectURL(videoFile);
+
+    // Configurações importantes para iOS
+    videoContainer.playsInline = true;
+    videoContainer.setAttribute('webkit-playsinline', '');
+    videoContainer.muted = true;
+    videoContainer.preload = 'auto';
+
     videoContainer.src = videoURL;
+    videoContainer.load(); // força o carregamento do vídeo
 
     videoTimer.innerHTML = '';
     sliderCropper.style.left = "0px";
 
-    videoContainer.addEventListener("loadedmetadata", () => {
+    // Garantia: ouvir tanto 'loadedmetadata' quanto 'canplay'
+    const onLoaded = () => {
+        videoContainer.removeEventListener("loadedmetadata", onLoaded);
+        videoContainer.removeEventListener("canplay", onLoaded);
+
         videoPages = Math.floor(videoContainer.duration * 10);
         for (let i = 0; i < videoPages; i++) {
             let div = document.createElement('div');
@@ -690,10 +702,15 @@ inputVideo.addEventListener('change', (e) => {
         updateCropper('M', 0, cropSize);
         updateCropRatio(initialCropRatio);
         loader('off');
-    }, { once: true });
+    };
 
-    inputVideo.value = '';
+    videoContainer.addEventListener("loadedmetadata", onLoaded, { once: true });
+    videoContainer.addEventListener("canplay", onLoaded, { once: true });
+
+    // ⚠️ Só limpar o input depois de garantir que o vídeo foi carregado
+    // inputVideo.value = '';
 });
+
 
 async function criarVideoDeFrames(videoEl, start, end) {
     const canvas = document.createElement("canvas");
