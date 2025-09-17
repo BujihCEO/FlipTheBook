@@ -669,7 +669,6 @@ inputVideo.addEventListener('change', (e) => {
     if (!videoFile) return;
     loader('on');
 
-    // Use URL.createObjectURL em vez de FileReader
     const videoURL = URL.createObjectURL(videoFile);
     videoContainer.src = videoURL;
 
@@ -758,6 +757,10 @@ let croppedVideoCanvas;
 function bookPlayer(url) {
     const video = document.createElement('video')
     video.src = url;
+    video.playsInline = true;
+    video.setAttribute('webkit-playsinline', '');
+    video.muted = true;
+    video.preload = 'auto';
     videoPage.replaceChildren(video);
     let paused;
 
